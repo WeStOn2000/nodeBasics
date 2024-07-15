@@ -1,29 +1,31 @@
-const https = require("https");
- //print the data
-function printMessage(username, badgeCount, points) {
-    const message = `${username} has ${badgeCount} total badge(s) and ${points} points in JavaScript`;
-    console.log(message);
-}
-function getProfile(username){
-// connect to api url()
-https.get(`https://teamtreehouse.com/profiles/${username}.json`,
-    (res) => {
- //read the data
-    let body ="";
-    res.on("data",data => {
-    body += data.toString();
+const express = require('express');
+const bodyParser =  require('body-parser');
+const cookieParser = require('cookie-parser')
+const app = express();
+
+app.use(bodyParser.urlencoded({ extended: false}));
+app.set('view engine', 'pug');
+app.use(cookieParser());
+app.use('/static',express.static('public'));
+
+ const  mainRoutes = require('./routes');
+ const cardRoutes = require('./routes/cards');
+
+app.use(mainRoutes);
+app.use('/cards', cardRoutes);
+
+app.use((req,res,next) => {
+ const err = new Error ('Not Found');
+ err.status = 404;
+ next(err);
 });
- //parse the data
-res.on('end', () => {
-    let profile = JSON.parse(body);
-    printMessage(
-        username,
-        profile.badges.length, 
-        profile.points.JavaScript
-    );
+
+app.use((err,req,res,next) => {
+    res.locals.error = err;
+    res.status(err.status || 500);
+    res.render("error");
 });
-}
-);
-}
-const users = process.argv.slice(2);
-users.forEach(getProfile);
+
+app.listen(3000, () => {
+console.log('Port Activated:3000');
+});
